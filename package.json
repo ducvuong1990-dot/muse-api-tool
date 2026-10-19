@@ -1,0 +1,19 @@
+{
+  "name": "muse-api-tool",
+  "version": "1.0.0",
+  "description": "Web tool for the Muse API gateway: chat, image and video generation",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "dev": "node --watch --env-file=.env server.js",
+    "mock": "node test/mock-upstream.js"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

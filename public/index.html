@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07080c">
+  <meta name="description" content="Muse API Studio — chat, tạo ảnh và tạo video qua Muse API gateway">
+  <title>🎪 Muse API Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Tới nội dung chính</a>
+  <div class="app">
+    <aside class="sidebar">
+      <h1 class="brand">🎪 <span translate="no">Muse&nbsp;API&nbsp;Studio</span></h1>
+      <nav class="tabs" id="tabBar" role="tablist" aria-label="Chức năng chính" aria-orientation="vertical">
+        <button class="tab-btn active" id="tabBtnChat" role="tab" aria-selected="true" aria-controls="tab-chat" data-tab="chat">💬 Chat</button>
+        <button class="tab-btn" id="tabBtnImage" role="tab" aria-selected="false" aria-controls="tab-image" data-tab="image" tabindex="-1">🎨 Ảnh</button>
+        <button class="tab-btn" id="tabBtnVideo" role="tab" aria-selected="false" aria-controls="tab-video" data-tab="video" tabindex="-1">🎬 Video</button>
+        <button class="tab-btn" id="tabBtnApi" role="tab" aria-selected="false" aria-controls="tab-api" data-tab="api" tabindex="-1">📖 API</button>
+      </nav>
+      <div class="side-foot">
+        <span id="keyBadge" class="badge" title="Trạng thái API key">🔑 …</span>
+        <button id="settingsBtn" class="ghost" aria-haspopup="dialog">⚙️ Cài đặt</button>
+      </div>
+    </aside>
+
+    <main id="main">
+    <!-- ============================= CHAT ============================= -->
+    <section id="tab-chat" class="tab active" role="tabpanel" aria-labelledby="tabBtnChat">
+      <div class="chat-layout">
+        <aside class="chat-side card">
+          <label for="chatModel">Model</label>
+          <select id="chatModel"></select>
+          <p id="modelSource" class="model-source" aria-live="polite"></p>
+
+          <label for="temp">Nhiệt độ: <span id="tempVal">0.7</span></label>
+          <input type="range" id="temp" min="0" max="2" step="0.1" value="0.7">
+
+          <label for="maxTokens">Max tokens <span class="muted">(để trống = mặc định)</span></label>
+          <input type="number" id="maxTokens" min="1" inputmode="numeric" placeholder="mặc định…" autocomplete="off">
+
+          <div class="side-actions">
+            <button id="clearChat" class="ghost">🗑️ Xóa hội thoại</button>
+            <button id="exportChat" class="ghost">📤 Xuất JSON</button>
+          </div>
+
+          <div class="hint">⏎ Enter gửi · Shift+⏎ xuống dòng</div>
+        </aside>
+
+        <div class="chat-main">
+          <div id="messages" class="messages">
+            <div class="empty"><span class="empty-icon" aria-hidden="true">🎪</span>Bắt đầu cuộc trò chuyện với <b translate="no">Muse</b>…</div>
+          </div>
+          <form id="chatForm" class="chat-input">
+            <div id="attachChips" class="attach-chips" hidden></div>
+            <div class="composer-row">
+              <button type="button" id="attachBtn" class="ghost attach-btn" aria-label="Đính kèm ảnh" title="Đính kèm ảnh (tối đa 4)">📎</button>
+              <textarea id="chatText" rows="2" placeholder="Nhập tin nhắn…" aria-label="Tin nhắn của bạn"></textarea>
+              <div class="input-buttons">
+                <button type="button" id="stopBtn" class="hidden danger">⏹️ Dừng</button>
+                <button type="submit" id="sendBtn" class="primary">Gửi ➤</button>
+              </div>
+            </div>
+            <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================= IMAGE ============================ -->
+    <section id="tab-image" class="tab" role="tabpanel" aria-labelledby="tabBtnImage">
+      <form id="imageForm" class="card form-grid">
+        <label class="full">Prompt
+          <input id="imgPrompt" required placeholder="a small gold coin on velvet…" autocomplete="off">
+        </label>
+        <label>Model
+          <select id="imgModel"></select>
+        </label>
+        <label>Kích thước
+          <select id="imgSize">
+            <option value="1024x1024" selected>1024×1024 (mặc định)</option>
+            <option value="1536x1024">1536×1024 (ngang)</option>
+            <option value="1024x1536">1024×1536 (dọc)</option>
+            <option value="768x768">768×768</option>
+            <option value="512x512">512×512</option>
+          </select>
+        </label>
+        <label>Số lượng
+          <input type="number" id="imgN" min="1" max="4" value="1" inputmode="numeric">
+        </label>
+        <div class="attach-strip full">
+          <button type="button" id="imgAttachBtn" class="ghost attach-btn" aria-label="Đính kèm ảnh tham chiếu" title="Đính kèm ảnh tham chiếu (tối đa 4)">📎 Ảnh tham chiếu</button>
+          <div id="imgChips" class="attach-chips" hidden></div>
+          <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+        </div>
+        <button type="submit" id="imgBtn" class="primary">🎨 Tạo ảnh</button>
+      </form>
+
+      <div id="imgStatus" class="status hidden" role="status"></div>
+      <div id="imgGallery" class="gallery"></div>
+    </section>
+
+    <!-- ============================= VIDEO ============================ -->
+    <section id="tab-video" class="tab" role="tabpanel" aria-labelledby="tabBtnVideo">
+      <form id="videoForm" class="card form-grid">
+        <label class="full">Prompt
+          <input id="vidPrompt" required placeholder="flying through clouds during sunset in 4k…" autocomplete="off">
+        </label>
+        <label>Model
+          <select id="vidModel"></select>
+        </label>
+        <label>Thời lượng (giây)
+          <select id="vidDuration">
+            <option value="4">4</option>
+            <option value="6" selected>6</option>
+            <option value="8">8</option>
+          </select>
+        </label>
+        <label>Tỷ lệ khung hình
+          <select id="vidRatio">
+            <option value="16:9" selected>16:9</option>
+            <option value="9:16">9:16</option>
+          </select>
+        </label>
+        <div class="attach-strip full">
+          <button type="button" id="vidAttachBtn" class="ghost attach-btn" aria-label="Đính kèm khung hình đầu" title="Dùng ảnh làm khung hình đầu tiên của video">📎 Khung hình đầu</button>
+          <div id="vidChips" class="attach-chips" hidden></div>
+          <input type="file" id="vidFile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+        </div>
+        <button type="submit" id="vidBtn" class="primary">🎬 Tạo video</button>
+      </form>
+
+      <div id="vidStatus" class="status hidden" role="status"></div>
+      <div id="vidResults" class="video-list"></div>
+    </section>
+
+    <!-- ============================= API GUIDE ========================= -->
+    <section id="tab-api" class="tab" role="tabpanel" aria-labelledby="tabBtnApi">
+      <div class="guide card">
+        <h2>📖 API — hướng dẫn nhanh</h2>
+
+        <h3>1 · Chạy gateway <span class="muted">(muse2api, OpenAI-compatible)</span></h3>
+        <pre><code>cd E:\Tools\PC\muse\muse2api
+.venv\Scripts\python.exe -m muse2api        # → http://127.0.0.1:18610</code></pre>
+
+        <h3>2 · Thêm account muse.ai vào pool</h3>
+        <div class="assist-row">
+          <button id="m2aCheck" class="ghost" type="button">🔄 Kiểm tra trạng thái</button>
+          <button id="m2aStart" class="ghost" type="button">▶️ Khởi động gateway</button>
+          <button id="m2aOpen" class="ghost" type="button">🌐 Mở muse.ai trong Chrome</button>
+          <button id="m2aImport" class="primary" type="button">🧲 Thêm account (tự lấy cookie)</button>
+        </div>
+        <div id="m2aStatus" class="status hidden" role="status" aria-live="polite"></div>
+        <div id="m2aResult" class="status hidden" role="status" aria-live="polite"></div>
+        <ol>
+          <li>Bấm <b>Khởi động gateway</b> nếu chưa chạy (cần <code>MUSE2API_HEADLESS=false</code> trong <code>muse2api/.env</code> để thấy cửa sổ Chrome).</li>
+          <li>Bấm <b>Mở muse.ai trong Chrome</b> → đăng nhập muse.ai (mã xác thực SMS/email).</li>
+          <li>Bấm <b>Thêm account</b> — server tự đọc cookie muse.ai qua CDP và <code>POST /admin/accounts</code>.</li>
+        </ol>
+        <p class="hint">Cách thủ công (terminal): <code>.venv\Scripts\python.exe import_account.py</code>, hoặc <code>POST /admin/accounts</code> với 4 cookie <code>hatch_sess, hatch_gw, hatch_vml, hatch_native_auth_device</code> — xem <a href="https://github.com/www222fff/muse2api#dashboard-api-keys-and-request-log" target="_blank" rel="noopener">README gốc của muse2api</a>.</p>
+
+        <h3>3 · API key</h3>
+        <p>Key <code>m2a-…</code> dùng cho cả <code>/v1/*</code> lẫn dashboard. Key hiện tại nằm trong <code>muse2api/.env</code> (<code>MUSE2API_API_KEY</code>). Tạo key mới: dashboard → <b>API keys</b>, hoặc <code>POST /admin/keys</code> — plaintext chỉ hiện <b>1 lần</b>. Cũng có thể nhập key vào ⚙️ Cài đặt của Studio (hồ sơ "muse2api local").</p>
+
+        <h3>4 · Gọi API trực tiếp</h3>
+        <p>Base URL: <code>http://127.0.0.1:18610/v1</code> — mọi SDK/client OpenAI chỉ cần đổi <code>base_url</code>.</p>
+        <pre><code># Chat (stream SSE)
+curl "http://127.0.0.1:18610/v1/chat/completions" -H "Authorization: Bearer %KEY%" -H "Content-Type: application/json" -d "{\"model\":\"muse-chat\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"xin chào\"}]}"
+
+# Tạo ảnh
+curl "http://127.0.0.1:18610/v1/images/generations" -H "Authorization: Bearer %KEY%" -H "Content-Type: application/json" -d "{\"model\":\"muse-image\",\"prompt\":\"a small gold coin on velvet\",\"size\":\"1024x1024\"}"
+
+# Tạo video: POST /v1/videos  →  poll GET /v1/videos/{task_id} đến khi completed
+curl "http://127.0.0.1:18610/v1/videos" -H "Authorization: Bearer %KEY%" -H "Content-Type: application/json" -d "{\"model\":\"muse-video\",\"prompt\":\"flying through clouds\",\"duration\":6,\"aspect_ratio\":\"16:9\"}"</code></pre>
+        <table>
+          <thead><tr><th>Model</th><th>Dùng cho</th></tr></thead>
+          <tbody>
+            <tr><td><code>muse-chat</code></td><td>Chat (stream/non-stream, multi-turn)</td></tr>
+            <tr><td><code>muse-image</code></td><td>Tạo ảnh, sửa ảnh tham chiếu</td></tr>
+            <tr><td><code>muse-video</code></td><td>Tạo video (task + poll)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>5 · Lỗi thường gặp</h3>
+        <table>
+          <thead><tr><th>Triệu chứng</th><th>Nguyên nhân & cách xử lý</th></tr></thead>
+          <tbody>
+            <tr><td><code>401 invalid or missing API key</code></td><td>Sai/thiếu key — lấy lại trong dashboard, hoặc kiểm tra <code>MUSE2API_API_KEY</code> trong <code>muse2api/.env</code>.</td></tr>
+            <tr><td>Log <code>loaded 0 account(s)</code> / không tạo được gì</td><td>Pool rỗng — làm <b>bước 2</b> (import account).</td></tr>
+            <tr><td>Account trạng thái <code>invalid</code></td><td>Cookie hết hạn — đăng nhập lại muse.ai rồi chạy lại <code>import_account.py</code>.</td></tr>
+            <tr><td>Account trạng thái <code>cooling</code></td><td>Hết quota tạm thời — tự quay lại sau cooldown (30s).</td></tr>
+            <tr><td>Dashboard không vào được</td><td>Dán đúng key admin — mặc định trùng <code>MUSE2API_API_KEY</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  </div>
+
+  <!-- =========================== SETTINGS ============================ -->
+  <div id="settingsModal" class="modal-backdrop hidden">
+    <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-head">
+        <h2 id="settingsTitle">⚙️ Cài đặt kết nối</h2>
+        <button id="modalClose" class="ghost icon-btn" type="button" aria-label="Đóng cài đặt">✕</button>
+      </div>
+
+      <label for="profileSelect">Hồ sơ kết nối</label>
+      <select id="profileSelect"></select>
+
+      <div class="hint" style="margin:0 0 8px">Mẫu nhanh:
+        <button id="presetLocal" class="linklike" type="button">muse2api local</button> ·
+        <button id="presetLlama" class="linklike" type="button">Meta Llama API</button>
+      </div>
+
+      <div class="profile-actions">
+        <button id="profNew" class="ghost" type="button">➕ Thêm mới</button>
+        <button id="profDel" class="ghost" type="button">🗑️ Xóa</button>
+        <button id="profTest" class="ghost" type="button">🩺 Kiểm tra key</button>
+      </div>
+
+      <label for="profLabel">Tên hồ sơ
+        <input id="profLabel" placeholder="VD: muse2api local, Meta Llama API…" autocomplete="off">
+      </label>
+      <label for="profBase">Base URL <span class="muted">(để trống = dùng .env)</span>
+        <input id="profBase" type="url" placeholder="https://your-gateway.example/v1" spellcheck="false" autocomplete="off">
+      </label>
+      <label for="profKey">API key <span class="muted">(để trống = dùng .env)</span>
+        <input type="password" id="profKey" placeholder="sk-… hoặc m2a-…" spellcheck="false" autocomplete="off">
+      </label>
+
+      <div id="testResult" class="status hidden" role="status"></div>
+
+      <p class="hint">Xác thực dùng nguyên gốc theo repo <b translate="no">muse2api</b>: key <code>m2a-…</code> tạo qua dashboard <code>/dashboard</code> hoặc <code>POST /admin/keys</code>. Hướng dẫn đầy đủ: <a href="https://github.com/www222fff/muse2api#dashboard-api-keys-and-request-log" target="_blank" rel="noopener">README gốc của muse2api</a> (bản trong máy: <code>muse2api/README.md</code>).</p>
+
+      <p class="hint">Hồ sơ lưu trong localStorage của trình duyệt; key/base gửi qua header riêng tới server — không nằm trong URL, không hiện trong log.</p>
+
+      <div class="modal-actions">
+        <button id="keyCancel" class="ghost" type="button">Đóng</button>
+        <button id="keySave" class="primary" type="button">💾 Lưu &amp; dùng</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
